@@ -94,8 +94,25 @@ const LocateNearestHospitalMyLoc = () => {
 
   //TODO
   //Write a function, which receives latitude and longitude of a place as params, and set the response using setAddress() setter function. Hint: You may use 3rd Party API geocode.maps.co in this function
-  function FindAddress(latitude, longitude) {
+  
+  async function FindAddress(latitude, longitude) {
     //complete the function
+    const requestOptions = {
+      method: "GET",
+      redirect: "follow",
+    };
+    // Replace this URL with the URL of your API and adjust query parameter if needed
+    try {
+      let res = await fetch(
+        `https://geocode.maps.co/reverse?lat=${latitude}&lon=${longitude}&api_key=${GEOCODE_API_KEY}`,
+        requestOptions
+      );
+      res = await res.text();
+      //setSuggestions(JSON.parse(res ?? [])); // Assuming res is always JSON
+      setAddress(JSON.parse(res ?? []));
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   function displayResults() {
@@ -113,14 +130,24 @@ const LocateNearestHospitalMyLoc = () => {
 
   */
   function findNearestHospital(Latitude, Longitude) {
-    let minDist = 0;
+    let minDist = Infinity;
     let nearestHospitalName = "";
     let hospitalDataList = [];
     if (hospitalData) hospitalDataList = JSON.parse(hospitalData);
+    console.log(hospitalDataList);
     let latNearestHospital = 0;
     let longNearestHospital = 0;
 
     //TODO
+    hospitalDataList.forEach(hospital => {
+      const distance = getDistanceFromLatLonInKm(Latitude, Longitude, hospital.Latitude, hospital.Longitude);
+      if (distance < minDist) {
+          minDist = distance;
+          nearestHospitalName = hospital.Name;
+          latNearestHospital = hospital.Latitude;
+          longNearestHospital = hospital.Longitude;
+      }
+  });
     //Iterate over hospitalDataList and find the nearest hospital to the given Latitude and Longitude
     setNearestHospital(nearestHospitalName);
     FindAddress(latNearestHospital, longNearestHospital);
@@ -146,7 +173,10 @@ const LocateNearestHospitalMyLoc = () => {
 
   //TODO
   //execute getHospitalDatafromDB() when the page loads for first time
-  
+  useEffect(() => {
+    getHospitalDatafromDB() ;
+  }, []);
+
 
   useEffect(() => {
     if (textToSearch == null || textToSearch.length == 0) setSearchList([]);
